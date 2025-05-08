@@ -86,7 +86,7 @@ int main() {
 
     std::vector<size_t> sizes = {
         64 << 10, 128 << 10, 256 << 10, 512 << 10,
-        1 << 20, 2 << 20, 4 << 20, 8 << 20, 16 << 20, 32 << 20
+        1 << 20, 2 << 20, 4 << 20, 8 << 20, 16 << 20
     };
 
     run_benchmark<float>(out, "float_sync", sizes);
