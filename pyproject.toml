@@ -1,0 +1,13 @@
+[project]
+name = "bandwidth-test"
+version = "0.1.0"
+description = "Plotting utilities for CUDA bandwidth tests"
+requires-python = ">=3.9"
+dependencies = [
+  "matplotlib>=3.7",
+  "pandas>=2.0",
+]
+
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
