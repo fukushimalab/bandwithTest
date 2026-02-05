@@ -53,8 +53,12 @@ __global__ void global_to_shared_kernel(const T* __restrict__ src, int count, bo
             smem4[lid] = src[tid]; // fallback
 #endif
         }
-	asm volatile("cp.async.commit_group;");
-	asm volatile("cp.async.wait_group 0;");
+#if __CUDA_ARCH__ >= 800
+        if (use_async) {
+            asm volatile("cp.async.commit_group;");
+            asm volatile("cp.async.wait_group 0;");
+        }
+#endif
         __syncthreads();
     }
 }
@@ -67,6 +71,7 @@ void run_benchmark(std::ofstream& out, const std::string& label, const std::vect
     const int blockSize = 256;
     cudaDeviceProp prop;
     cudaGetDeviceProperties(&prop, 0);
+    static bool warned_async_disabled = false;
     for (auto size : sizes) {
         int numElems = size / sizeof(T);
         T* d_src;
@@ -80,17 +85,20 @@ void run_benchmark(std::ofstream& out, const std::string& label, const std::vect
         cudaEventCreate(&start);
         cudaEventCreate(&stop);
 
-        
+        bool effective_async = use_async;
         if (prop.major < 8 && use_async) {
-            std::cout << "Skipping async on pre-Ampere device\n";
-            continue;
+            effective_async = false;
+            if (!warned_async_disabled) {
+                std::cout << "Async disabled on pre-Ampere device\n";
+                warned_async_disabled = true;
+            }
         }
 
-        global_to_shared_kernel<T><<<gridSize, blockSize, smemSize>>>(d_src, numElems, use_async);
+        global_to_shared_kernel<T><<<gridSize, blockSize, smemSize>>>(d_src, numElems, effective_async);
         cudaDeviceSynchronize();
 
         cudaEventRecord(start);
-        global_to_shared_kernel<T><<<gridSize, blockSize, smemSize>>>(d_src, numElems, use_async);
+        global_to_shared_kernel<T><<<gridSize, blockSize, smemSize>>>(d_src, numElems, effective_async);
         cudaEventRecord(stop);
         cudaEventSynchronize(stop);
 
@@ -125,4 +133,3 @@ int main() {
     out.close();
     return 0;
 }
-
