@@ -4,3 +4,8 @@
 *.ptx
 *.cubin
 *.fatbin
+
+# Python cache
+__pycache__/
+*.py[cod]
+bandwidth_test.egg-info/
